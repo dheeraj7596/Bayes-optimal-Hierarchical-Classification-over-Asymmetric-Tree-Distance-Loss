@@ -1,0 +1,50 @@
+clear all;
+addpath ../util
+trainmode=1;
+load ../hierarchy_data.mat
+
+if trainmode==1
+    load ../pruned_metadata metadata_train metadata_vali
+    metadata_test=metadata_vali;
+    clear metadata_vali
+    train_file='prepped_pruned_train.txt';
+    test_file='prepped_pruned_vali.txt';
+    C_vals=[1 10];
+    outputs_folder='validation';
+else
+    load ../pruned_final_metadata metadata_train metadata_test
+    train_file='prepped_pruned_final_train.txt';
+    test_file='prepped_pruned_test.txt';
+    outputs_folder='final';
+end
+
+
+num_test=length(metadata_test);
+num_train=length(metadata_train);
+
+h=max(nodes_level)+1;
+
+
+type='linear';
+
+
+
+unix('mkdir temp');
+unix('chmod +x ../HSVM_LSHTC_classify');
+unix('chmod +x ../HSVM_LSHTC_learn');
+
+for C_index=1:length(C_vals)
+    C_value=C_vals(C_index)
+    
+    command=['../HSVM_LSHTC_learn -v 0 -o 2 -c ' num2str(C_value) ' ../Dataset_files/' train_file '  '  '/model' num2str(C_value)];
+    unix(command);
+    
+    command=['../HSVM_LSHTC_classify ../Dataset_files/' test_file  ' ./temp/model' num2str(C_value) ' ./temp/predictions_' num2str(C_value)];
+    unix(command);
+    
+    
+%     command=['rm -r -f temp'];
+%     unix(command);
+end
+
+rmpath ../util
